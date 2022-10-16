@@ -1,0 +1,442 @@
+﻿@page "/game"
+<PageTitle>inż. Patryk Krawiec</PageTitle>
+
+<div class="d-flex justify-content-center" style="margin-top:5rem">
+    <h3 style="margin-bottom:50px">Gra milionerzy</h3>
+    </div>
+@using Millionaires.Data
+@inject QuestionsService QuestionService
+@inject GameService GameServices
+@inject NavigationManager _navigationManager
+@inject IJSRuntime _jsRuntime;
+
+
+
+@if (!GameServices.getGameStatus())
+{
+
+
+
+    if (questions == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        if (GameServices.getIsGameWon())
+        {
+            <div class="d-flex justify-content-center">
+                <h1>WYGRAŁEŚ MILIONERÓW !!!</h1>
+            </div>
+            <div class="d-flex justify-content-center">
+                <h1>
+                    Wygrana : @CurrentMoneyLevel
+                </h1>
+            </div>
+            <div class="d-flex justify-content-center">
+                <button class="btn btn-primary" @onclick="RestartGame">Zagraj jeszcze raz</button>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex justify-content-center">
+                <h3>Grasz o @CurrentMoneyLevel zł</h3>
+            </div>
+            <div class="d-flex justify-content-center">
+                <h1 style="margin:5px">Pytanie brzmi : @QuestionText</h1><br/>
+            </div>
+
+            <br />
+            <div class="d-flex justify-content-center">
+               
+                @if(answeres.Contains("A"))
+                {
+                    <button class="btn btn-primary" style="margin:5px" @onclick="@(()=>SubmitAnswere("A"))">A : @AnswereA</button>
+                }
+                else
+                {
+                    <button class="btn btn-dark" style="margin:5px">A : @AnswereA</button>
+
+                }
+                @if (answeres.Contains("B"))
+                {
+                    <button class="btn btn-primary" style="margin:5px" @onclick="@(()=>SubmitAnswere("B"))">B : @AnswereB</button>
+                }
+                else
+                {
+                    <button class="btn btn-dark" style="margin:5px">B : @AnswereB</button>
+
+                }
+                @if (answeres.Contains("C"))
+                {
+                    <button class="btn btn-primary" style="margin:5px" @onclick="@(()=>SubmitAnswere("C"))">C : @AnswereC</button>
+                }
+                else
+                {
+                    <button class="btn btn-dark" style="margin:5px">C : @AnswereC</button>
+
+                }
+                @if (answeres.Contains("D"))
+                {
+                    <button class="btn btn-primary" style="margin:5px" @onclick="@(()=>SubmitAnswere("D"))">D : @AnswereD</button>
+                }
+                else
+                {
+                    <button class="btn btn-dark" style="margin:5px">D : @AnswereD</button>
+
+                }
+            </div>
+            
+            if (GameServices.getIsCallToFrientAvaible())
+            {
+                <div class="d-flex justify-content-center" style="margin-top:50px">
+                <h3>Koła ratunkowe</h3>
+                </div>
+                <div class="d-flex justify-content-center">
+                    <button class="btn btn-primary" style="margin:5px" @onclick="CallAFriend">Telefon do przyjaciela</button>
+                </div>
+
+            }
+            else
+            {
+                if (AnswereFromFriend != ""){
+                <input type="text" value="@AnswereFromFriend" class="form-control textbox-parameters" style="margin:5px">
+                <br/>
+                }
+               
+                <div class="d-flex justify-content-center">
+                    <button class="btn btn-dark" style="margin:5px">Telefon do przyjaciela</button>
+                </div>
+               
+            }
+            if(GameServices.getIsAudienceVoteAvaible())
+            {
+                <div class="d-flex justify-content-center">
+                    <button class="btn btn-primary" style="margin:5px" @onclick="AskAudience">Zapytaj publiczność</button>
+                </div>
+            }
+            else{
+
+                if (AnswereAisCorrectProcentage != "")
+                {
+                    <input type="text" value="A : @AnswereAisCorrectProcentage" class="form-control textbox-parameters" style="margin:5px">
+                    <br />
+                    <input type="text" value="B: @AnswereBisCorrectProcentage" class="form-control textbox-parameters" style="margin:5px">
+                    <br />
+                    <input type="text" value="C: @AnswereCisCorrectProcentage" class="form-control textbox-parameters" style="margin:5px">
+                    <br />
+                    <input type="text" value="D: @AnswereDisCorrectProcentage" class="form-control textbox-parameters" style="margin:5px">
+                    <br />
+                }
+
+                <div class="d-flex justify-content-center">
+                    <button class="btn btn-dark" style="margin:5px">Zapytaj publiczność</button>
+                </div>
+            }
+            @if (GameServices.getIsFiftyFiftyAvaible())
+            {
+                <div class="d-flex justify-content-center">
+                    <button class="btn btn-primary" style="margin:5px" @onclick="TakeFiftyFifty">50:50</button>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex justify-content-center">
+                    <button class="btn btn-dark" style="margin:5px">50:50</button>
+                </div>
+            }
+        }
+
+    }
+
+}
+else
+{
+
+    <div class="d-flex justify-content-center">
+    <h1>PRZEGRANA</h1><br/>
+    </div>
+        <div class="d-flex justify-content-center">
+</div>
+                <div class="d-flex justify-content-center">
+
+    <h1>Wygrana : @CurrentMoneyLevel</h1><br/>
+    </div>
+    <div class="d-flex justify-content-center">
+
+    <button class="btn btn-primary" @onclick="RestartGame">Zagraj jeszcze raz</button>
+    </div>
+    <audio id="sound" src="/res/correctanswere.wav"/>
+}
+
+
+@code {
+    private Question? currentQuestion;
+    private string? QuestionText { get; set; }
+    private string? AnswereA { get; set; }
+    private string? AnswereB { get; set; }
+    private string? AnswereC { get; set; }
+    private string? AnswereD { get; set; }
+    private string? CorrectAnswere { get; set; }
+    private int? CurrentMoneyLevel { get; set; }
+    private string? AnswereFromFriend { get; set; }
+    List<string> answeres { get; set; }
+    private string ExcludedOption;
+    private List<Question>? questions;
+    Random random;
+    protected override async Task OnInitializedAsync()
+    {
+        if(QuestionService.isQuestionsReady())
+        {
+            answeres = new List<string>() { "A", "B", "C", "D" };
+            AnswereFromFriend = "";
+            random = new Random();
+            questions = await QuestionService.GetQuestions();
+            GameServices.SetupGame(questions);
+            await GetAndSetupQuestion();
+        }
+        else
+        {
+            _navigationManager.NavigateTo("/millionarie");
+
+        }
+      
+
+
+    }
+    private async Task GetAndSetupQuestion()
+    {
+        answeres = new List<string>() { "A", "B", "C", "D" };
+
+        AnswereFromFriend = "";
+        AnswereAisCorrectProcentage = "";
+        AnswereBisCorrectProcentage = "";
+        AnswereCisCorrectProcentage = "";
+        AnswereDisCorrectProcentage = "";
+
+        currentQuestion = await GameServices.GetQuestion();
+        QuestionText = currentQuestion.QuestionText;
+        AnswereA = currentQuestion.AnswereA;
+        AnswereB = currentQuestion.AnswereB;
+        AnswereC = currentQuestion.AnswereC;
+        AnswereD = currentQuestion.AnswereD;
+        CorrectAnswere = currentQuestion.CorrectAnswere;
+        CurrentMoneyLevel =GameServices.rewardValueByLevel[await GameServices.GetCurrentLevel()];
+    }
+    private void TakeFiftyFifty()
+    {
+        GameServices.setIsFiftyFiftyAvaibleFalse();
+        //ExcludedOption = currentQuestion.CorrectAnswere;
+        //answeres.Remove(ExcludedOption);
+        Random random = new Random();
+        //ans to be deleted
+        while(answeres.Count>2)
+        {
+            int index = random.Next(0, 3);
+            if(answeres.ElementAt(index) != currentQuestion.CorrectAnswere)
+            {   
+                answeres.RemoveAt(index);
+            }
+
+
+        }
+
+
+    }
+    private void CallAFriend()
+    {
+        GameServices.setIsCallToFrientAvaibleFalse();
+        int levelOfAssurance = random.Next(0, 3);
+        switch(levelOfAssurance){
+            case 0:
+                AnswereFromFriend = "Nistety nie mam zielonego pojęcia ";
+                break;
+            case 1:
+                if (random.Next(0, 2) == 0)
+                {
+                    AnswereFromFriend = "To może być " + currentQuestion.CorrectAnswere;
+
+                }
+                else{
+
+                    AnswereFromFriend = "Może odpowiedź " + currentQuestion.CorrectAnswere;
+
+
+                }
+                break;
+            case 2:
+                if(random.Next(0,1)==0)
+                {
+                    AnswereFromFriend = "Wydaje mi się że będzie to " + currentQuestion.CorrectAnswere;
+
+                }
+                else{
+                    AnswereFromFriend = "Ciężko powiedzieć ";
+
+                }
+                break;
+            case 3:
+                AnswereFromFriend = "To na pewno będzie "+currentQuestion.CorrectAnswere;
+                break;
+        }
+    }
+    private string? AnswereAisCorrectProcentage { get; set; }
+    private string? AnswereBisCorrectProcentage { get; set; }
+    private string? AnswereCisCorrectProcentage { get; set; }
+    private string? AnswereDisCorrectProcentage { get; set; }
+
+    private void AskAudience()
+    {
+        GameServices.setIsAudienceVoteAvaibleFalse();
+        int levelOfAssurance = random.Next(20, 85);
+        int votesAmountLeft = 100 - levelOfAssurance;
+        List<string> answeres = new List<string>() { "A", "B", "C", "D" };
+        switch (CorrectAnswere)
+        { 
+            case "A":
+                answeres.Remove("A");
+                while(answeres.Count>0)
+                {
+                    int chosen = new Random().Next(0, answeres.Count - 1);
+                    switch(answeres.ElementAt(chosen))
+                    {
+                        case "B":
+                            AnswereBisCorrectProcentage = (new Random().Next(0, votesAmountLeft).ToString());
+                            votesAmountLeft -= int.Parse(AnswereBisCorrectProcentage);
+                            break;
+                        case "C":
+                            AnswereCisCorrectProcentage = (new Random().Next(0, votesAmountLeft).ToString());
+                            votesAmountLeft -= int.Parse(AnswereCisCorrectProcentage);
+
+                            break;
+                        case "D":
+                            AnswereDisCorrectProcentage = (new Random().Next(0, votesAmountLeft).ToString());
+                            votesAmountLeft -= int.Parse(AnswereDisCorrectProcentage);
+
+                            break;
+                    }
+                    answeres.RemoveAt(chosen);
+
+                }
+                AnswereAisCorrectProcentage = (levelOfAssurance+votesAmountLeft).ToString();
+
+                break;
+            case "B":
+                answeres.Remove("B");
+                while (answeres.Count > 0)
+                {
+                    int chosen = new Random().Next(0, answeres.Count - 1);
+                    switch (answeres.ElementAt(chosen))
+                    {
+                        case "A":
+                            AnswereAisCorrectProcentage = (new Random().Next(0, votesAmountLeft).ToString());
+                            votesAmountLeft -= int.Parse(AnswereAisCorrectProcentage);
+
+                            break;
+                        case "C":
+                            AnswereCisCorrectProcentage = (new Random().Next(0, votesAmountLeft).ToString());
+                            votesAmountLeft -= int.Parse(AnswereCisCorrectProcentage);
+
+                            break;
+                        case "D":
+                            AnswereDisCorrectProcentage = (new Random().Next(0, votesAmountLeft).ToString());
+                            votesAmountLeft -= int.Parse(AnswereDisCorrectProcentage);
+
+                            break;
+                    }
+                    answeres.RemoveAt(chosen);
+
+                }
+                AnswereBisCorrectProcentage = (levelOfAssurance + votesAmountLeft).ToString();
+
+                break;
+            case "C":
+                answeres.Remove("C");
+                while (answeres.Count > 0)
+                {
+                    int chosen = new Random().Next(0, answeres.Count - 1);
+                    switch (answeres.ElementAt(chosen))
+                    {
+                        case "A":
+                            AnswereAisCorrectProcentage = (new Random().Next(0, votesAmountLeft).ToString());
+                            votesAmountLeft -= int.Parse(AnswereAisCorrectProcentage);
+
+                            break;
+                        case "B":
+                            AnswereBisCorrectProcentage = (new Random().Next(0, votesAmountLeft).ToString());
+                            votesAmountLeft -= int.Parse(AnswereBisCorrectProcentage);
+
+                            break;
+                        case "D":
+                            AnswereDisCorrectProcentage = (new Random().Next(0, votesAmountLeft).ToString());
+                            votesAmountLeft -= int.Parse(AnswereDisCorrectProcentage);
+
+                            break;
+                    }
+                    answeres.RemoveAt(chosen);
+
+                }
+                AnswereCisCorrectProcentage = (levelOfAssurance + votesAmountLeft).ToString();
+
+                break;
+            case "D":
+                answeres.Remove("D");
+                while (answeres.Count > 0)
+                {
+                    int chosen = new Random().Next(0, answeres.Count - 1);
+                    switch (answeres.ElementAt(chosen))
+                    {
+                        case "A":
+                            AnswereAisCorrectProcentage = (new Random().Next(0, votesAmountLeft).ToString());
+                            votesAmountLeft -= int.Parse(AnswereAisCorrectProcentage);
+
+                            break;
+                        case "B":
+                            AnswereBisCorrectProcentage = (new Random().Next(0, votesAmountLeft).ToString());
+                            votesAmountLeft -= int.Parse(AnswereBisCorrectProcentage);
+
+                            break;
+                        case "C":
+                            AnswereCisCorrectProcentage = (new Random().Next(0, votesAmountLeft).ToString());
+                            votesAmountLeft -= int.Parse(AnswereCisCorrectProcentage);
+
+                            break;
+                    }
+                    answeres.RemoveAt(chosen);
+
+                }
+                AnswereDisCorrectProcentage = (levelOfAssurance + votesAmountLeft).ToString();
+
+                break;
+        }
+
+    }
+    private void SubmitAnswere(string ans)
+    {
+        GameServices.SubmitQuestion(ans);
+        if(!GameServices.getGameStatus())
+        {
+            if (!GameServices.getIsGameWon())
+            {
+                //Game continious
+                PlayAudioFile();
+                GetAndSetupQuestion();
+            }
+
+        }
+        else
+        {
+            //Game ends
+        }
+    }
+    async Task PlayAudioFile()
+    {
+        await _jsRuntime.InvokeAsync<string>("PlaySound");
+        
+    }
+
+    private async void RestartGame()
+    {
+        await OnInitializedAsync();
+    }
+}
